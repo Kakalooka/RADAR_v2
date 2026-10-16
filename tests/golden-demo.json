@@ -1,0 +1,736 @@
+{
+ "boot": {
+  "asof": "2026-08-25",
+  "iv": [
+   [
+    "INIT-05",
+    "ROOT_CAUSE",
+    "p1",
+    1000049.6,
+    "Wpisz decyzję o INIT-05 na agenda zarządu — odblokuje: INIT-06, INIT-20, INIT-10, INIT-15.",
+    "Put the INIT-05 decision on the board agenda — it unblocks: INIT-06, INIT-20, INIT-10, INIT-15.",
+    "INIT-05 jest on_track, ale jej wynik blokuje 4 downstream. Interwencja tutaj ma największą dźwignię portfelową.",
+    "DECYZJA_ZARZADU"
+   ],
+   [
+    "INIT-15",
+    "DIRECT_ACTION",
+    "p1",
+    1000020,
+    "Przydziel właściciela technicznego do INIT-15. Inicjatywa nie ruszy bez tej roli — nawet po odblokowaniu upstream.",
+    "Assign a technical owner to INIT-15. The initiative will not move without that role — even once upstream is unblocked.",
+    "Ostatnia aktualizacja 20 dni temu. Czeka na: INIT-05, INIT-07 — niejasne, czy potrzeba startu czy wyników upstream.",
+    "BRAK_ZASOBU"
+   ],
+   [
+    "INIT-03",
+    "ROOT_CAUSE",
+    "p1",
+    1000013.2,
+    "Sfinalizuj INIT-03 i potwierdź gotowość dla INIT-04 — start kampanii 1 września jest zagrożony.",
+    "Finalise INIT-03 and confirm readiness for INIT-04 — the campaign start (1 września) is at risk.",
+    "INIT-03 jest on_track, ale jej wynik blokuje 1 downstream. Interwencja tutaj ma największą dźwignię portfelową.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-18",
+    "DIRECT_ACTION",
+    "p2",
+    30016,
+    "Zaktualizuj plan INIT-18 i potwierdź z właścicielami INIT-12, INIT-17, kiedy będą dostępne dane potrzebne do dalszych prac. Sprawdź, czy INIT-18 potrzebuje startu upstream czy dopiero ich wyników.",
+    "Update the INIT-18 plan and confirm with the owners of INIT-12, INIT-17 when the data needed to continue will be available. Check whether INIT-18 needs upstream to start or upstream results.",
+    "Ostatnia aktualizacja 16 dni temu. Czeka na: INIT-12, INIT-17 — niejasne, czy potrzeba startu czy wyników upstream.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-14",
+    "DIRECT_ACTION",
+    "p2",
+    30014,
+    "Uzgodnij data contract między INIT-12 a INIT-14: zmiana struktury danych nie została zakomunikowana. Wymagana synchronizacja schematu i protokół powiadamiania przy przyszłych zmianach.",
+    "Agree a data contract between INIT-12 and INIT-14: the data-structure change was never communicated. Requires a schema sync and a notification protocol for future changes.",
+    "Ostatnia aktualizacja 14 dni temu. Czeka na: INIT-12 — niejasne, czy potrzeba startu czy wyników upstream.",
+    "BRAK_KOMUNIKACJI"
+   ],
+   [
+    "INIT-07",
+    "ROOT_CAUSE",
+    "p2",
+    20202,
+    "Potwierdź gotowość INIT-07 do go-live — INIT-08, INIT-15 zależy od jego wyniku.",
+    "Confirm INIT-07 readiness for go-live — INIT-08, INIT-15 depend on its outcome.",
+    "INIT-07 jest on_track, ale jej wynik blokuje 2 downstream. Interwencja tutaj ma największą dźwignię portfelową.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-06",
+    "IMPACT",
+    "p2",
+    10115,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-05. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-20",
+    "IMPACT",
+    "p2",
+    10023,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-05, INIT-06. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-08",
+    "IMPACT",
+    "p2",
+    10013,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-07. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-10",
+    "IMPACT",
+    "p2",
+    10011,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-05, INIT-09. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-04",
+    "IMPACT",
+    "p2",
+    10010,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-03. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-02",
+    "IMPACT",
+    "p2",
+    10007,
+    null,
+    null,
+    "Główna interwencja należy do upstream: INIT-01. Po odblokowaniu upstream ta inicjatywa może ruszyć.",
+    "OCZEKIWANIE_NA_DANE"
+   ],
+   [
+    "INIT-16",
+    "MONITOR",
+    "p2",
+    4,
+    null,
+    null,
+    null,
+    "OCZEKIWANIE_NA_AKCEPTACJE"
+   ]
+  ],
+  "stale": [
+   [
+    "INIT-01",
+    5,
+    65,
+    "",
+    "INIT-02",
+    "INIT-02"
+   ],
+   [
+    "INIT-02",
+    7,
+    20,
+    "INIT-01",
+    "",
+    ""
+   ],
+   [
+    "INIT-03",
+    3,
+    70,
+    "",
+    "INIT-04|INIT-16",
+    "INIT-04"
+   ],
+   [
+    "INIT-04",
+    10,
+    30,
+    "INIT-03",
+    "",
+    ""
+   ],
+   [
+    "INIT-05",
+    4,
+    55,
+    "",
+    "INIT-06|INIT-20|INIT-10|INIT-15",
+    "INIT-06|INIT-20|INIT-10|INIT-15"
+   ],
+   [
+    "INIT-06",
+    15,
+    25,
+    "INIT-05",
+    "INIT-20",
+    "INIT-20"
+   ],
+   [
+    "INIT-07",
+    2,
+    80,
+    "",
+    "INIT-08|INIT-15",
+    "INIT-08|INIT-15"
+   ],
+   [
+    "INIT-08",
+    13,
+    15,
+    "INIT-07",
+    "",
+    ""
+   ],
+   [
+    "INIT-09",
+    6,
+    40,
+    "",
+    "INIT-10",
+    "INIT-10"
+   ],
+   [
+    "INIT-10",
+    11,
+    20,
+    "INIT-05|INIT-09",
+    "",
+    ""
+   ],
+   [
+    "INIT-11",
+    5,
+    60,
+    "",
+    "",
+    ""
+   ],
+   [
+    "INIT-12",
+    1,
+    90,
+    "",
+    "INIT-14|INIT-18",
+    "INIT-14|INIT-18"
+   ],
+   [
+    "INIT-13",
+    8,
+    45,
+    "",
+    "",
+    ""
+   ],
+   [
+    "INIT-14",
+    14,
+    35,
+    "INIT-12",
+    "",
+    ""
+   ],
+   [
+    "INIT-15",
+    20,
+    10,
+    "INIT-05|INIT-07",
+    "",
+    ""
+   ],
+   [
+    "INIT-16",
+    4,
+    50,
+    "INIT-03",
+    "",
+    ""
+   ],
+   [
+    "INIT-17",
+    3,
+    55,
+    "",
+    "INIT-18",
+    "INIT-18"
+   ],
+   [
+    "INIT-18",
+    16,
+    25,
+    "INIT-12|INIT-17",
+    "",
+    ""
+   ],
+   [
+    "INIT-19",
+    2,
+    65,
+    "",
+    "",
+    ""
+   ],
+   [
+    "INIT-20",
+    23,
+    5,
+    "INIT-05|INIT-06",
+    "",
+    ""
+   ]
+  ],
+  "alerty": [
+   {
+    "id": "INIT-20",
+    "msg": "INIT-20 — brak aktualizacji od 23 dni (blocked)",
+    "msg_en": "INIT-20 — no update for 23 days (blocked)",
+    "dni": 23
+   },
+   {
+    "id": "INIT-15",
+    "msg": "INIT-15 — brak aktualizacji od 20 dni (blocked)",
+    "msg_en": "INIT-15 — no update for 20 days (blocked)",
+    "dni": 20
+   },
+   {
+    "id": "INIT-15",
+    "msg": "INIT-15 — sygnał: brak właściciela / decyzji",
+    "msg_en": "INIT-15 — signal: missing owner / decision",
+    "dni": 20
+   },
+   {
+    "id": "INIT-18",
+    "msg": "INIT-18 — brak aktualizacji od 16 dni (at_risk)",
+    "msg_en": "INIT-18 — no update for 16 days (at_risk)",
+    "dni": 16
+   },
+   {
+    "id": "INIT-06",
+    "msg": "INIT-06 — brak aktualizacji od 15 dni (at_risk)",
+    "msg_en": "INIT-06 — no update for 15 days (at_risk)",
+    "dni": 15
+   }
+  ],
+  "brief": {
+   "Customer Success": {
+    "dzial": "Customer Success",
+    "statuses": {
+     "on_track": 3,
+     "at_risk": 0,
+     "blocked": 1
+    },
+    "blokady_przychodzace": [
+     {
+      "inicjatywa": "INIT-08",
+      "od": "INIT-07",
+      "dzial_upstream": "Customer Success"
+     }
+    ],
+    "blokuje_innych": [
+     {
+      "inicjatywa": "INIT-07",
+      "blokuje": "INIT-15",
+      "dzial_downstream": "Pricing & Revenue Management"
+     }
+    ],
+    "przeterminowane": [
+     {
+      "id": "INIT-08",
+      "nazwa_inicjatywy": "Skrócenie czasu obsługi reklamacji o 30%",
+      "dzial": "Customer Success",
+      "grupa_tematyczna": "Redukcja czasu obsługi reklamacji",
+      "wlasciciel": "Karol Nowak",
+      "sponsor": "Ewa Krawczyk",
+      "status": "blocked",
+      "postep_procent": "15",
+      "data_ostatniej_aktualizacji": "2026-08-12",
+      "planned_start": "2026-08-03",
+      "planned_end": "2026-09-25",
+      "forecast_end": "2026-10-09",
+      "zalezy_od": "INIT-07",
+      "notatka_statusu": "Nie da się priorytetyzować kolejki reklamacji bez modelu ryzyka churnu z INIT-07. Zespół czeka, morale spada.",
+      "dep": [
+       "INIT-07"
+      ],
+      "postep": 15,
+      "staleness": 13,
+      "downstream": [],
+      "bad_downstream": []
+     }
+    ],
+    "inicjatywy": [
+     "INIT-07",
+     "INIT-08",
+     "INIT-13",
+     "INIT-19"
+    ]
+   },
+   "Marketing Commercial": {
+    "dzial": "Marketing Commercial",
+    "statuses": {
+     "on_track": 3,
+     "at_risk": 1,
+     "blocked": 0
+    },
+    "blokady_przychodzace": [
+     {
+      "inicjatywa": "INIT-04",
+      "od": "INIT-03",
+      "dzial_upstream": "Marketing Commercial"
+     }
+    ],
+    "blokuje_innych": [],
+    "przeterminowane": [],
+    "inicjatywy": [
+     "INIT-03",
+     "INIT-04",
+     "INIT-11",
+     "INIT-16"
+    ]
+   },
+   "Pricing & Revenue Management": {
+    "dzial": "Pricing & Revenue Management",
+    "statuses": {
+     "on_track": 1,
+     "at_risk": 1,
+     "blocked": 2
+    },
+    "blokady_przychodzace": [
+     {
+      "inicjatywa": "INIT-06",
+      "od": "INIT-05",
+      "dzial_upstream": "Pricing & Revenue Management"
+     },
+     {
+      "inicjatywa": "INIT-15",
+      "od": "INIT-05",
+      "dzial_upstream": "Pricing & Revenue Management"
+     },
+     {
+      "inicjatywa": "INIT-15",
+      "od": "INIT-07",
+      "dzial_upstream": "Customer Success"
+     },
+     {
+      "inicjatywa": "INIT-20",
+      "od": "INIT-05",
+      "dzial_upstream": "Pricing & Revenue Management"
+     },
+     {
+      "inicjatywa": "INIT-20",
+      "od": "INIT-06",
+      "dzial_upstream": "Pricing & Revenue Management"
+     }
+    ],
+    "blokuje_innych": [
+     {
+      "inicjatywa": "INIT-05",
+      "blokuje": "INIT-10",
+      "dzial_downstream": "Regional Sales International"
+     }
+    ],
+    "przeterminowane": [
+     {
+      "id": "INIT-06",
+      "nazwa_inicjatywy": "Dynamiczne rabaty wolumenowe",
+      "dzial": "Pricing & Revenue Management",
+      "grupa_tematyczna": "Optymalizacja cennika",
+      "wlasciciel": "Bartek Malinowski",
+      "sponsor": "Dorota Michalska",
+      "status": "at_risk",
+      "postep_procent": "25",
+      "data_ostatniej_aktualizacji": "2026-08-10",
+      "planned_start": "2026-08-03",
+      "planned_end": "2026-09-18",
+      "forecast_end": "2026-10-02",
+      "zalezy_od": "INIT-05",
+      "notatka_statusu": "Prace wstrzymane - czekamy na decyzję o cenniku bazowym z INIT-05, bez tego nie da się ustalić progów rabatowych. Ostatnia aktualizacja 10 dni temu.",
+      "dep": [
+       "INIT-05"
+      ],
+      "postep": 25,
+      "staleness": 15,
+      "downstream": [
+       "INIT-20"
+      ],
+      "bad_downstream": [
+       "INIT-20"
+      ]
+     },
+     {
+      "id": "INIT-15",
+      "nazwa_inicjatywy": "Model predykcji odejść klientów SME",
+      "dzial": "Pricing & Revenue Management",
+      "grupa_tematyczna": "Optymalizacja cennika",
+      "wlasciciel": "Dorota Michalska",
+      "sponsor": "Dorota Michalska (sponsor = exec)",
+      "status": "blocked",
+      "postep_procent": "10",
+      "data_ostatniej_aktualizacji": "2026-08-05",
+      "planned_start": "2026-07-27",
+      "planned_end": "2026-10-09",
+      "forecast_end": "2026-10-30",
+      "zalezy_od": "INIT-05, INIT-07",
+      "notatka_statusu": "Projekt praktycznie zamrożony - czekamy jednocześnie na finalny cennik SME (INIT-05) i na dane z modelu churnu Customer Success (INIT-07). Brak właściciela technicznego od 3 tygodni.",
+      "dep": [
+       "INIT-05",
+       "INIT-07"
+      ],
+      "postep": 10,
+      "staleness": 20,
+      "downstream": [],
+      "bad_downstream": []
+     },
+     {
+      "id": "INIT-20",
+      "nazwa_inicjatywy": "Konsolidacja cenników regionalnych do jednego systemu",
+      "dzial": "Pricing & Revenue Management",
+      "grupa_tematyczna": "Optymalizacja cennika",
+      "wlasciciel": "Bartek Malinowski",
+      "sponsor": "Dorota Michalska",
+      "status": "blocked",
+      "postep_procent": "5",
+      "data_ostatniej_aktualizacji": "2026-08-02",
+      "planned_start": "2026-07-27",
+      "planned_end": "2026-10-16",
+      "forecast_end": "2026-11-13",
+      "zalezy_od": "INIT-05, INIT-06",
+      "notatka_statusu": "Nie ruszymy z konsolidacją, dokąd nie zamknie się bazowy cennik SME (INIT-05) i logika rabatów wolumenowych (INIT-06). Zespół przeniesiony tymczasowo do innych zadań.",
+      "dep": [
+       "INIT-05",
+       "INIT-06"
+      ],
+      "postep": 5,
+      "staleness": 23,
+      "downstream": [],
+      "bad_downstream": []
+     }
+    ],
+    "inicjatywy": [
+     "INIT-05",
+     "INIT-06",
+     "INIT-15",
+     "INIT-20"
+    ]
+   },
+   "Regional Sales International": {
+    "dzial": "Regional Sales International",
+    "statuses": {
+     "on_track": 2,
+     "at_risk": 1,
+     "blocked": 0
+    },
+    "blokady_przychodzace": [
+     {
+      "inicjatywa": "INIT-10",
+      "od": "INIT-05",
+      "dzial_upstream": "Pricing & Revenue Management"
+     },
+     {
+      "inicjatywa": "INIT-10",
+      "od": "INIT-09",
+      "dzial_upstream": "Regional Sales International"
+     }
+    ],
+    "blokuje_innych": [
+     {
+      "inicjatywa": "INIT-17",
+      "blokuje": "INIT-18",
+      "dzial_downstream": "Sales Ops PL"
+     }
+    ],
+    "przeterminowane": [
+     {
+      "id": "INIT-10",
+      "nazwa_inicjatywy": "Lokalizacja cennika i ofert na rynek DACH",
+      "dzial": "Regional Sales International",
+      "grupa_tematyczna": "Ekspansja rynków międzynarodowych",
+      "wlasciciel": "Wiktor Lis",
+      "sponsor": "Tomasz Górski",
+      "status": "at_risk",
+      "postep_procent": "20",
+      "data_ostatniej_aktualizacji": "2026-08-14",
+      "planned_start": "2026-08-03",
+      "planned_end": "2026-09-30",
+      "forecast_end": "2026-10-14",
+      "zalezy_od": "INIT-05, INIT-09",
+      "notatka_statusu": "Potrzebujemy finalnego cennika bazowego z INIT-05 i potwierdzonego zakresu z INIT-09, żeby zacząć lokalizację. Dwa blokery na raz.",
+      "dep": [
+       "INIT-05",
+       "INIT-09"
+      ],
+      "postep": 20,
+      "staleness": 11,
+      "downstream": [],
+      "bad_downstream": []
+     }
+    ],
+    "inicjatywy": [
+     "INIT-09",
+     "INIT-10",
+     "INIT-17"
+    ]
+   },
+   "Sales Ops PL": {
+    "dzial": "Sales Ops PL",
+    "statuses": {
+     "on_track": 2,
+     "at_risk": 2,
+     "blocked": 1
+    },
+    "blokady_przychodzace": [
+     {
+      "inicjatywa": "INIT-02",
+      "od": "INIT-01",
+      "dzial_upstream": "Sales Ops PL"
+     },
+     {
+      "inicjatywa": "INIT-14",
+      "od": "INIT-12",
+      "dzial_upstream": "Sales Ops PL"
+     },
+     {
+      "inicjatywa": "INIT-18",
+      "od": "INIT-12",
+      "dzial_upstream": "Sales Ops PL"
+     },
+     {
+      "inicjatywa": "INIT-18",
+      "od": "INIT-17",
+      "dzial_upstream": "Regional Sales International"
+     }
+    ],
+    "blokuje_innych": [],
+    "przeterminowane": [
+     {
+      "id": "INIT-14",
+      "nazwa_inicjatywy": "Automatyczne raporty tygodniowe dla regionów",
+      "dzial": "Sales Ops PL",
+      "grupa_tematyczna": "Automatyzacja ofertowania",
+      "wlasciciel": "Piotr Zieliński",
+      "sponsor": "Grzegorz Baran",
+      "status": "at_risk",
+      "postep_procent": "35",
+      "data_ostatniej_aktualizacji": "2026-08-11",
+      "planned_start": "2026-08-03",
+      "planned_end": "2026-09-18",
+      "forecast_end": "2026-09-29",
+      "zalezy_od": "INIT-12",
+      "notatka_statusu": "Raporty mają korzystać z tych samych danych co dashboard z INIT-12, ale struktura danych w dashboardzie zmieniła się w ostatnim tygodniu bez informacji do naszego zespołu.",
+      "dep": [
+       "INIT-12"
+      ],
+      "postep": 35,
+      "staleness": 14,
+      "downstream": [],
+      "bad_downstream": []
+     },
+     {
+      "id": "INIT-18",
+      "nazwa_inicjatywy": "Ujednolicenie KPI sprzedażowych między regionami",
+      "dzial": "Sales Ops PL",
+      "grupa_tematyczna": "Automatyzacja ofertowania",
+      "wlasciciel": "Aneta Wiśniewska",
+      "sponsor": "Grzegorz Baran",
+      "status": "at_risk",
+      "postep_procent": "25",
+      "data_ostatniej_aktualizacji": "2026-08-09",
+      "planned_start": "2026-08-03",
+      "planned_end": "2026-10-02",
+      "forecast_end": "2026-11-02",
+      "zalezy_od": "INIT-12, INIT-17",
+      "notatka_statusu": "Chcemy oprzeć wspólne KPI na danych z dashboardu (INIT-12) i doświadczeniach pilotażu włoskiego (INIT-17), ale oba są jeszcze w toku - ryzyko przesunięcia terminu o miesiąc.",
+      "dep": [
+       "INIT-12",
+       "INIT-17"
+      ],
+      "postep": 25,
+      "staleness": 16,
+      "downstream": [],
+      "bad_downstream": []
+     }
+    ],
+    "inicjatywy": [
+     "INIT-01",
+     "INIT-02",
+     "INIT-12",
+     "INIT-14",
+     "INIT-18"
+    ]
+   }
+  }
+ },
+ "dq_en": [
+  [
+   "confirmed",
+   "No status history",
+   "Only the current status and the last-update date are available. It is impossible to derive “how many days blocked”, a trend, or historical velocity. Staleness = days since the last update, not days in the current status."
+  ],
+  [
+   "confirmed",
+   "INIT-15: no technical owner (reported in the status note)",
+   "The status note states outright that there has been no technical owner for ~3 weeks. On top of that, the business owner and the sponsor are the same person (Dorota Michalska) — possible governance ambiguity; needs verification. The wlasciciel field holds the business owner; the data model has no separate technical_owner field."
+  ],
+  [
+   "likely",
+   "Deadlines/milestones live only in the notes (3 initiatives)",
+   "Initiatives with dates in their notes: INIT-04, INIT-07, INIT-17. These are contextual signals only — they are never reconciled against the structured planned_end / forecast_end fields, so a note can contradict the schedule without the app noticing."
+  ],
+  [
+   "inferred",
+   "INIT-16: potential missing dependency/approval",
+   "The zalezy_od field points only to INIT-03. The status note says the team still needs Pricing sign-off to close. A Pricing approval is not represented structurally."
+  ],
+  [
+   "inferred",
+   "INIT-17 → INIT-18: timing dependency ambiguity",
+   "INIT-18 needs the “lessons from the Italian pilot” from INIT-17. The pilot starts on 1 September. Unclear: does INIT-18 need the pilot to start, or its results? A hidden delay of several weeks is possible."
+  ]
+ ],
+ "dq_pl": [
+  [
+   "confirmed",
+   "Brak historii statusów",
+   "Dostępny jest tylko aktualny status i data ostatniej aktualizacji. Niemożliwe jest wyliczenie: „ile dni zablokowane”, trendu, prędkości historycznej. Staleness = dni od ostatniej aktualizacji, nie dni w bieżącym statusie."
+  ],
+  [
+   "confirmed",
+   "INIT-15: brak właściciela technicznego (raport z notatki)",
+   "Notatka statusu wprost informuje o braku właściciela technicznego od ~3 tygodni. Dodatkowo: właściciel biznesowy i sponsor wskazują tę samą osobę (Dorota Michalska) — możliwa niejasność governance; wymaga weryfikacji. Pole wlasciciel zawiera właściciela biznesowego; model danych nie przewiduje osobnego pola technical_owner."
+  ],
+  [
+   "likely",
+   "Terminy/kamienie milowe tylko w notatkach (3 inicjatywy)",
+   "Inicjatywy z datami w notatkach: INIT-04, INIT-07, INIT-17. To sygnały kontekstowe — nie są uzgadniane z polami planned_end / forecast_end, więc notatka może być sprzeczna z harmonogramem bez wykrycia przez aplikację."
+  ],
+  [
+   "inferred",
+   "INIT-16: potencjalna brakująca zależność/akceptacja",
+   "Pole zalezy_od wskazuje tylko na INIT-03. Notatka statusu zawiera: „do zamknięcia potrzebujemy jeszcze akceptacji Pricing”. Akceptacja działu Pricing nie jest reprezentowana strukturalnie."
+  ],
+  [
+   "inferred",
+   "INIT-17 → INIT-18: dwuznaczność zależności czasowej",
+   "INIT-18 potrzebuje „doświadczeń pilotażu włoskiego” z INIT-17. Pilotaż startuje 1 września. Niejasne: czy INIT-18 potrzebuje startu pilotażu czy jego wyników? Możliwe ukryte opóźnienie o kilka tygodni."
+  ]
+ ],
+ "tlRows": 20,
+ "tbody": 20,
+ "nodes": 20
+}

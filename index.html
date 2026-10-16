@@ -733,8 +733,8 @@ const I18N = {
     dqA1:'<strong>Świeżość danych</strong> oznacza „dni od ostatniej aktualizacji”, nie „dni w aktualnym statusie”',
     dqA2: (d, src) => src === 'column'
       ? `<strong>Data analizy</strong>: ${d} — z kolumny snapshot_date w pliku CSV`
-      : src === 'derived'
-      ? `<strong>Data analizy</strong>: ${d} — dzień po najpóźniejszej dacie aktualizacji w pliku (brak kolumny snapshot_date)`
+      : src === 'today'
+      ? `<strong>Data analizy</strong>: ${d} — dzisiejsza data (plik nie zawiera kolumny snapshot_date; dodaj ją, aby analizować stan na konkretny dzień)`
       : `<strong>Data analizy</strong> przyjęta jako zamrożony snapshot: ${d} (nie pochodzi z pola w CSV)`,
     dqA3:'<strong>Oś czasu</strong> opiera się wyłącznie na polach <code>planned_start</code>, <code>planned_end</code> i <code>forecast_end</code>; terminy wspomniane w notatkach statusu są sygnałem kontekstowym i nigdy ich nie nadpisują',
     dqA4:'<strong>Zależności</strong> oparte wyłącznie na polu <code>zalezy_od</code>; możliwe nieformalne zależności w notatkach',
@@ -878,8 +878,8 @@ const I18N = {
     dqA1:'<strong>Data freshness</strong> means “days since the last update”, not “days in the current status”',
     dqA2: (d, src) => src === 'column'
       ? `<strong>Analysis date</strong>: ${d} — taken from the snapshot_date column of the CSV`
-      : src === 'derived'
-      ? `<strong>Analysis date</strong>: ${d} — the day after the newest update in the file (no snapshot_date column)`
+      : src === 'today'
+      ? `<strong>Analysis date</strong>: ${d} — today's date (the file has no snapshot_date column; add one to analyse as of a specific day)`
       : `<strong>Analysis date</strong> is a frozen snapshot: ${d} (it does not come from a CSV field)`,
     dqA3:'<strong>The timeline</strong> is driven solely by <code>planned_start</code>, <code>planned_end</code> and <code>forecast_end</code>; deadlines mentioned in status notes are contextual signals and never override them',
     dqA4:'<strong>Dependencies</strong> rely solely on the <code>zalezy_od</code> field; informal dependencies may hide in the notes',
@@ -2492,7 +2492,7 @@ const ID_RE=/^[A-Za-z0-9][A-Za-z0-9_.\-]*$/;
 const STATUSES=['on_track','at_risk','blocked'];
 
 // Deterministic structural validation of an imported portfolio. Also resolves the
-// snapshot date: explicit snapshot_date column, otherwise the day after the newest update.
+// snapshot date: explicit snapshot_date column, otherwise today's date (clearly labelled).
 function validatePortfolio(parsed) {
   const errors=[...parsed.errors];
   const missingCols=REQUIRED_COLS.filter(c=>!parsed.header.includes(c));
@@ -2539,16 +2539,17 @@ function validatePortfolio(parsed) {
   cycles.forEach(c=>errors.push({key:'valCycle', args:[c]}));
 
   // snapshot date
-  let asof=null, asofSource='derived';
+  let asof=null, asofSource='today';
   if(parsed.header.includes('snapshot_date')){
-    const vals=[...new Set(recs.map(r=>r.snapshot_date).filter(Boolean))];
-    if(vals.length!==1||!parseSchedDate(vals[0])) errors.push({key:'valBadSnapshot', args:[vals.join(', ')||'—']});
+    // every row must carry the same, non-empty date
+    const vals=[...new Set(recs.map(r=>r.snapshot_date))];
+    if(vals.length!==1||!parseSchedDate(vals[0])) errors.push({key:'valBadSnapshot', args:[vals.map(v=>v||'(puste/empty)').join(', ')]});
     else { asof=vals[0]; asofSource='column'; }
   }
-  const upd=recs.map(r=>parseSchedDate(r.data_ostatniej_aktualizacji)).filter(Boolean);
-  if(!asof&&upd.length){
-    const next=new Date(Math.max(...upd.map(d=>d.getTime()))+DAY_MS);
-    asof=next.toISOString().slice(0,10);
+  if(!asof){
+    // no declared snapshot: analyse as of today (local date), so an old file shows as old
+    const n=new Date();
+    asof=`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;
   }
   const asofD=parseSchedDate(asof);
   if(asofD) recs.forEach(r=>{
