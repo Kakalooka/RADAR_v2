@@ -195,6 +195,12 @@ tr.highlighted td{background:#fff8d6}
 .b-action-l{font-size:10px;color:#bbb;margin-bottom:4px;font-weight:500}
 .b-action-t{font-size:13px;color:#1a1a1a;line-height:1.6}
 
+#csv-err{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.csv-err-box{background:#fff;border-radius:10px;max-width:560px;width:100%;max-height:80vh;overflow:auto;padding:18px 20px;box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:12px;color:#333}
+#csv-err-title{font-size:13px;font-weight:600;color:#991b1b;margin-bottom:10px;line-height:1.5}
+#csv-err-list{margin:0 0 14px 18px;padding:0;line-height:1.7}
+.csv-err-ln{color:#888;font-variant-numeric:tabular-nums}
+.csv-err-box button{background:#1a1a1a;color:#fff;border:0;border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer}
 #toast{position:fixed;bottom:20px;right:20px;background:#1a1a1a;color:#fff;font-size:12px;padding:9px 15px;border-radius:7px;display:none;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2)}
 
 /* layout switcher */
@@ -572,6 +578,13 @@ tr.highlighted td{background:#fff8d6}
   </div>
 </div>
 <div id="toast"></div>
+<div id="csv-err" onclick="if(event.target===this)closeCsvErrors()">
+  <div class="csv-err-box" role="alertdialog" aria-labelledby="csv-err-title">
+    <div id="csv-err-title"></div>
+    <ul id="csv-err-list"></ul>
+    <button onclick="closeCsvErrors()" data-i18n="valClose">Close</button>
+  </div>
+</div>
 <script>
 // ── DATA (injected) ──
 // The ONLY built-in demo portfolio. Raw records go through the same
@@ -718,13 +731,37 @@ const I18N = {
     dqSecInferred: n => `Wnioskowane / do weryfikacji (${n})`,
     dqAssumptions:'ℹ️ Założenia przyjęte w analizie',
     dqA1:'<strong>Świeżość danych</strong> oznacza „dni od ostatniej aktualizacji”, nie „dni w aktualnym statusie”',
-    dqA2: d => `<strong>Data analizy</strong> przyjęta jako zamrożony snapshot: ${d} (nie pochodzi z pola w CSV)`,
+    dqA2: (d, src) => src === 'column'
+      ? `<strong>Data analizy</strong>: ${d} — z kolumny snapshot_date w pliku CSV`
+      : src === 'derived'
+      ? `<strong>Data analizy</strong>: ${d} — dzień po najpóźniejszej dacie aktualizacji w pliku (brak kolumny snapshot_date)`
+      : `<strong>Data analizy</strong> przyjęta jako zamrożony snapshot: ${d} (nie pochodzi z pola w CSV)`,
     dqA3:'<strong>Oś czasu</strong> opiera się wyłącznie na polach <code>planned_start</code>, <code>planned_end</code> i <code>forecast_end</code>; terminy wspomniane w notatkach statusu są sygnałem kontekstowym i nigdy ich nie nadpisują',
     dqA4:'<strong>Zależności</strong> oparte wyłącznie na polu <code>zalezy_od</code>; możliwe nieformalne zależności w notatkach',
 
     csvTooFew:'Błąd: za mało wierszy w CSV',
     csvLoadedToast: (f, n) => `Wczytano: ${f} (${n} ${plPL(n,'inicjatywa','inicjatywy','inicjatyw')})`,
     csvParseErr: m => 'Błąd parsowania CSV: ' + m,
+    valTitle: (f, n) => `Plik ${f} odrzucony — ${n} ${plPL(n,'błąd','błędy','błędów')}. Bieżący portfel pozostaje bez zmian.`,
+    valClose:'Zamknij',
+    valLine: n => `wiersz ${n}: `,
+    valMore: n => `…i ${n} więcej`,
+    valEmpty:'Plik jest pusty.',
+    valTooFew:'Za mało inicjatyw — wymagane są co najmniej 2.',
+    valUnclosedQuote:'Niezamknięty cudzysłów — reszta pliku nie może zostać poprawnie odczytana.',
+    valColCount: (got, exp) => `liczba kolumn ${got}, oczekiwano ${exp}.`,
+    valMissingCols: c => `Brak wymaganych kolumn: ${c}.`,
+    valBadId: id => `nieprawidłowe id „${id}” (dozwolone: litery, cyfry, _ . -).`,
+    valDupId: (id, first) => `zduplikowane id ${id} (pierwsze wystąpienie: wiersz ${first}).`,
+    valEmptyField: (f, id) => `puste pole ${f} w ${id}.`,
+    valBadStatus: (id, s) => `${id}: nieznany status „${s}” (dozwolone: on_track, at_risk, blocked).`,
+    valBadProgress: (id, p) => `${id}: postep_procent „${p}” musi być liczbą całkowitą 0–100.`,
+    valBadDate: (id, f, v) => `${id}: ${f} „${v}” nie jest datą w formacie YYYY-MM-DD.`,
+    valSelfDep: id => `${id} zależy od samej siebie.`,
+    valUnknownDep: (id, d) => `${id} zależy od ${d}, którego nie ma w pliku.`,
+    valCycle: c => `Cykl zależności: ${c}.`,
+    valBadSnapshot: v => `Kolumna snapshot_date musi zawierać jedną poprawną datę YYYY-MM-DD (znaleziono: ${v}).`,
+    valFutureUpdate: (id, u, s) => `${id}: data aktualizacji ${u} jest późniejsza niż data snapshotu ${s}.`,
 
     mdTitle:'# Brief operacyjny — portfel inicjatyw',
     mdAsOf: d => `Stan na ${d}`,
@@ -839,13 +876,37 @@ const I18N = {
     dqSecInferred: n => `Inferred / to verify (${n})`,
     dqAssumptions:'ℹ️ Assumptions used in this analysis',
     dqA1:'<strong>Data freshness</strong> means “days since the last update”, not “days in the current status”',
-    dqA2: d => `<strong>Analysis date</strong> is a frozen snapshot: ${d} (it does not come from a CSV field)`,
+    dqA2: (d, src) => src === 'column'
+      ? `<strong>Analysis date</strong>: ${d} — taken from the snapshot_date column of the CSV`
+      : src === 'derived'
+      ? `<strong>Analysis date</strong>: ${d} — the day after the newest update in the file (no snapshot_date column)`
+      : `<strong>Analysis date</strong> is a frozen snapshot: ${d} (it does not come from a CSV field)`,
     dqA3:'<strong>The timeline</strong> is driven solely by <code>planned_start</code>, <code>planned_end</code> and <code>forecast_end</code>; deadlines mentioned in status notes are contextual signals and never override them',
     dqA4:'<strong>Dependencies</strong> rely solely on the <code>zalezy_od</code> field; informal dependencies may hide in the notes',
 
     csvTooFew:'Error: too few rows in the CSV',
     csvLoadedToast: (f, n) => `Loaded: ${f} (${n} initiative${sfx(n)})`,
     csvParseErr: m => 'CSV parsing error: ' + m,
+    valTitle: (f, n) => `${f} rejected — ${n} error${sfx(n)}. The current portfolio is unchanged.`,
+    valClose:'Close',
+    valLine: n => `line ${n}: `,
+    valMore: n => `…and ${n} more`,
+    valEmpty:'The file is empty.',
+    valTooFew:'Too few initiatives — at least 2 are required.',
+    valUnclosedQuote:'Unclosed quote — the rest of the file cannot be read reliably.',
+    valColCount: (got, exp) => `${got} columns, expected ${exp}.`,
+    valMissingCols: c => `Missing required columns: ${c}.`,
+    valBadId: id => `invalid id "${id}" (allowed: letters, digits, _ . -).`,
+    valDupId: (id, first) => `duplicate id ${id} (first seen on line ${first}).`,
+    valEmptyField: (f, id) => `empty ${f} in ${id}.`,
+    valBadStatus: (id, s) => `${id}: unknown status "${s}" (allowed: on_track, at_risk, blocked).`,
+    valBadProgress: (id, p) => `${id}: postep_procent "${p}" must be an integer 0–100.`,
+    valBadDate: (id, f, v) => `${id}: ${f} "${v}" is not a YYYY-MM-DD date.`,
+    valSelfDep: id => `${id} depends on itself.`,
+    valUnknownDep: (id, d) => `${id} depends on ${d}, which is not in the file.`,
+    valCycle: c => `Dependency cycle: ${c}.`,
+    valBadSnapshot: v => `The snapshot_date column must hold a single valid YYYY-MM-DD date (found: ${v}).`,
+    valFutureUpdate: (id, u, s) => `${id}: update date ${u} is later than the snapshot date ${s}.`,
 
     mdTitle:'# Operating brief — initiative portfolio',
     mdAsOf: d => `As of ${d}`,
@@ -876,6 +937,14 @@ function tf(obj, field) {
     if (k in obj) return obj[k];
   }
   return obj[field];
+}
+
+// HTML-escape any value that originates from the dataset before it reaches innerHTML.
+// IDs are additionally restricted by validatePortfolio(), so they are also safe in
+// onclick attributes and CSS selectors.
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
 function applyStaticLang() {
@@ -999,7 +1068,7 @@ function renderAlerts(alerty) {
   document.getElementById('alert-bar').style.display='flex';
   el.innerHTML = alerty.map(a => {
     const msg = tf(a,'msg') || a.msg;
-    return `<span class="alert-item"><b>${a.id}</b> — ${msg.replace(a.id+' — ','')}</span>`;
+    return `<span class="alert-item"><b>${esc(a.id)}</b> — ${esc(msg.replace(a.id+' — ',''))}</span>`;
   }).join('');
 }
 
@@ -1035,13 +1104,14 @@ function shortDept(d) {
 }
 
 function renderDeptList(recs, dzialy) {
-  document.getElementById('dept-list').innerHTML = dzialy.map(d => {
+  document.getElementById('dept-list').innerHTML = dzialy.map((d, di) => {
     const n = recs.filter(r=>r.dzial===d).length;
     const short = shortDept(d);
     const sel = !S.deptFilter.has(d); // selected = widoczny (NIE w hide-set)
-    return `<div class="dzial-row${sel?' selected':''}" data-dzial="${d}" onclick="toggleDept('${d}')">
+    // department names are free text — pass an index to onclick, never the raw name
+    return `<div class="dzial-row${sel?' selected':''}" data-dzial="${esc(d)}" onclick="toggleDept(APP_DATA.dzialy[${di}])">
       <div class="dr-bar" style="background:${DEPT_COLORS[d]||'#bbb'}"></div>
-      <span class="dr-name">${short}</span>
+      <span class="dr-name">${esc(short)}</span>
       <span class="dr-count">${n}</span>
     </div>`;
   }).join('');
@@ -1177,11 +1247,22 @@ let currentLayout = 'cols';
 let svgSize = {w:600, h:400};
 
 // ── LAYOUT CALCULATORS ──
-function calcLayoutCols(recs) {
+// Longest-path depth. Bounded to recs.length passes, so a cycle that ever slips past
+// validatePortfolio() degrades the layout instead of freezing the tab.
+function calcDepth(recs) {
   const depth={};
   recs.forEach(r=>depth[r.id]=0);
-  let changed=true;
-  while(changed){ changed=false; recs.forEach(r=>{ (r.dep||[]).forEach(d=>{ if(depth[r.id]<=depth[d]){depth[r.id]=depth[d]+1;changed=true;}}); }); }
+  for(let pass=0, changed=true; changed && pass<=recs.length; pass++){
+    changed=false;
+    recs.forEach(r=>{ (r.dep||[]).forEach(d=>{
+      if(d in depth && depth[r.id]<=depth[d]){ depth[r.id]=depth[d]+1; changed=true; }
+    }); });
+  }
+  return depth;
+}
+
+function calcLayoutCols(recs) {
+  const depth=calcDepth(recs);
   const cols={};
   recs.forEach(r=>{ const c=depth[r.id]; if(!cols[c])cols[c]=[]; cols[c].push(r.id); });
   const pos={}, COL_W=140, ROW_H=72, PAD_X=24, PAD_Y=24;
@@ -1194,10 +1275,7 @@ function calcLayoutCols(recs) {
 function calcLayoutLanes(recs) {
   // horizontal lanes per dept; within each lane: sorted by depth left→right
   const dzialy=[...new Set(recs.map(r=>r.dzial))].sort();
-  const depth={};
-  recs.forEach(r=>depth[r.id]=0);
-  let changed=true;
-  while(changed){ changed=false; recs.forEach(r=>{ (r.dep||[]).forEach(d=>{ if(depth[r.id]<=depth[d]){depth[r.id]=depth[d]+1;changed=true;}}); }); }
+  const depth=calcDepth(recs);
   const LANE_H=110, COL_W=140, PAD_X=30, PAD_Y=20, NODE_PAD=16;
   const pos={};
   dzialy.forEach((dzial,laneIdx)=>{
@@ -1265,7 +1343,7 @@ function redrawGraph(recs) {
       const lh=LANE_H-4;
       const col=DEPT_COLORS[dzial]||'#888';
       lanesBg+=`<rect x="0" y="${ly}" width="${maxX}" height="${lh}" fill="${col}" fill-opacity="0.04" rx="0"/>`;
-      lanesBg+=`<text class="lane-label" x="8" y="${ly+14}" font-size="9" fill="${col}" font-weight="500" opacity="0.7">${dzial}</text>`;
+      lanesBg+=`<text class="lane-label" x="8" y="${ly+14}" font-size="9" fill="${col}" font-weight="500" opacity="0.7">${esc(dzial)}</text>`;
     });
   }
 
@@ -1302,7 +1380,7 @@ function redrawGraph(recs) {
     const sw=isCrit?2:1;
     const bg=isCrit?'#f5f3ff':statusBg[r.status]||'#fff';
     const tc=isCrit?'#4338ca':statusText[r.status]||'#333';
-    const shortName=(r.nazwa_inicjatywy||'').slice(0,14)+((r.nazwa_inicjatywy||'').length>14?'…':'');
+    const shortName=esc((r.nazwa_inicjatywy||'').slice(0,14)+((r.nazwa_inicjatywy||'').length>14?'…':''));
     const warn=r.status==='blocked'?' ⛔':r.status==='at_risk'?' ⚠':'';
     const blokuje=(r.downstream||[]).filter(d=>byid[d]&&byid[d].status!=='on_track').length;
     const deptDot=`<circle cx="${x+NODE_W-8}" cy="${y+8}" r="3.5" fill="${DEPT_COLORS[r.dzial]||'#bbb'}"/>`;
@@ -1330,8 +1408,15 @@ function redrawGraph(recs) {
   initNodeDrag(recs);
 }
 
+// Window-level listeners are re-registered on every redraw (layout switch, language
+// switch, CSV import). Each init aborts the previous generation so they never pile up.
+let dragAbort=null, panAbort=null;
+
 // ── NODE DRAG ──
 function initNodeDrag(recs) {
+  if(dragAbort) dragAbort.abort();
+  dragAbort=new AbortController();
+  const sig={signal:dragAbort.signal};
   let draggingNode=null, dnStartX=0, dnStartY=0, dnOrigX=0, dnOrigY=0;
   let clickTimer=null, clickCount=0;
 
@@ -1385,8 +1470,8 @@ function initNodeDrag(recs) {
   };
 
   const onUp=()=>{ draggingNode=null; document.querySelectorAll('.gnode').forEach(g=>g.classList.remove('dragging-node')); };
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
+  window.addEventListener('mousemove', onMove, sig);
+  window.addEventListener('mouseup', onUp, sig);
 }
 
 function updateNodePosition(id, recs) {
@@ -1432,6 +1517,9 @@ function initPanZoom() {
   while(vport.firstChild) newVp.appendChild(vport.firstChild);
   vport.parentNode.replaceChild(newVp, vport);
   const vp2=document.getElementById('graph-vp');
+  if(panAbort) panAbort.abort();
+  panAbort=new AbortController();
+  const sig={signal:panAbort.signal};
 
   vp2.addEventListener('mousedown', e=>{
     if(e.target.closest('.gnode')) return;
@@ -1442,8 +1530,8 @@ function initPanZoom() {
     if(!panning) return;
     vp.x=startVX+(e.clientX-startX); vp.y=startVY+(e.clientY-startY);
     applyTransform();
-  });
-  window.addEventListener('mouseup', ()=>{ panning=false; vp2.classList.remove('grabbing'); });
+  }, sig);
+  window.addEventListener('mouseup', ()=>{ panning=false; vp2.classList.remove('grabbing'); }, sig);
 
   vp2.addEventListener('wheel', e=>{
     e.preventDefault();
@@ -1557,7 +1645,8 @@ function renderQueue(interwencje) {
     } else if(iv.typ) {
       rolaBadge = `<span class="iv-badge badge-${iv.typ}">${badgeLabel(iv.typ)||iv.typ}</span>`;
     }
-    const rek=tf(iv,'rekomendacja'), why=tf(iv,'dlaczego'), uzas=tf(iv,'uzasadnienie')||'';
+    // generated texts embed dataset values (e.g. owner names) — escape at render time
+    const rek=tf(iv,'rekomendacja')?esc(tf(iv,'rekomendacja')):null, why=tf(iv,'dlaczego')?esc(tf(iv,'dlaczego')):null, uzas=tf(iv,'uzasadnienie')||'';
     const blast=iv.bad_downstream.length>0
       ?`<span class="iv-blast hot">${t('ivWaiting', iv.bad_downstream.length)}</span>`
       :iv.downstream.length>0?`<span class="iv-blast warm">${iv.downstream.length}↓</span>`:'';
@@ -1574,13 +1663,13 @@ function renderQueue(interwencje) {
       </div>
     </div>`:'';
 
-    const summary=uzas.slice(0,72)+(uzas.length>72?'…':'');
+    const summary=esc(uzas.slice(0,72)+(uzas.length>72?'…':''));
     // Priorytet: p1 czerwony, p2 żółty, p3/inne szary
     const prioClass = iv.priority==='p1'?'p1':iv.priority==='p2'?'p2':'';
     return `<div class="iv ${prioClass}${!hasExpand?' no-expand':''}" id="iv-${iv.id}" onclick="${hasExpand?"toggleIv('"+iv.id+"')":''}">
       <div class="iv-top">
         <span class="iv-id">${iv.id}</span>
-        <span class="iv-name">${iv.nazwa}</span>
+        <span class="iv-name">${esc(iv.nazwa)}</span>
         ${blast}
       </div>
       ${rolaBadge}
@@ -1702,7 +1791,7 @@ function openPanel(id) {
 
   // intervention for this id — rozróżniamy stany
   const iv=APP_DATA.interwencje.find(i=>i.id===id);
-  const ivRek=tf(iv,'rekomendacja'), ivWhy=tf(iv,'dlaczego');
+  const ivRek=tf(iv,'rekomendacja')?esc(tf(iv,'rekomendacja')):null, ivWhy=tf(iv,'dlaczego')?esc(tf(iv,'dlaczego')):null;
   let ivHTML='';
   if(iv && ivRek){
     const rola = iv.rola || iv.typ;
@@ -1755,20 +1844,20 @@ function openPanel(id) {
 
   document.getElementById('sp-body').innerHTML=`
     <div style="display:flex;gap:8px;margin-bottom:12px">
-      <span class="sb ${sbCls[r.status]||''}">${sbLbl[r.status]||r.status}</span>
+      <span class="sb ${sbCls[r.status]||''}">${sbLbl[r.status]||esc(r.status)}</span>
       <div style="display:flex;align-items:center;gap:7px;flex:1">
         <div class="pbar" style="width:80px"><div class="pfill" style="width:${r.postep}%;background:${pfCol[r.status]||'#22c55e'}"></div></div>
         <span style="font-size:12px;color:#888;font-weight:500">${r.postep}%</span>
       </div>
     </div>
-    <div class="sp-row"><span class="sp-row-label">${t('rowOwner')}</span><span class="sp-row-val">${r.wlasciciel}</span></div>
-    <div class="sp-row"><span class="sp-row-label">${t('rowSponsor')}</span><span class="sp-row-val">${r.sponsor}</span></div>
-    <div class="sp-row"><span class="sp-row-label">${t('rowLastUpdate')}</span><span class="sp-row-val${r.staleness>14?' stale':r.staleness>7?' warn-age':''}">${r.data_ostatniej_aktualizacji} (${r.staleness}d)</span></div>
-    <div class="sp-row"><span class="sp-row-label">${t('rowTheme')}</span><span class="sp-row-val" style="font-size:11px">${r.grupa_tematyczna}</span></div>
+    <div class="sp-row"><span class="sp-row-label">${t('rowOwner')}</span><span class="sp-row-val">${esc(r.wlasciciel)}</span></div>
+    <div class="sp-row"><span class="sp-row-label">${t('rowSponsor')}</span><span class="sp-row-val">${esc(r.sponsor)}</span></div>
+    <div class="sp-row"><span class="sp-row-label">${t('rowLastUpdate')}</span><span class="sp-row-val${r.staleness>14?' stale':r.staleness>7?' warn-age':''}">${esc(r.data_ostatniej_aktualizacji)} (${r.staleness}d)</span></div>
+    <div class="sp-row"><span class="sp-row-label">${t('rowTheme')}</span><span class="sp-row-val" style="font-size:11px">${esc(r.grupa_tematyczna)}</span></div>
     ${schedulePanelHTML(r)}
     ${r.dep&&r.dep.length?`<div class="sp-section"><div class="sp-sec-title">${t('secDependsOn')}</div><div>${depPills}</div></div>`:''}
     ${blokujeIds.length?`<div class="sp-section"><div class="sp-sec-title">${t('secBlocks')}</div><div>${blokujePills}</div></div>`:''}
-    <div class="sp-section"><div class="sp-sec-title">${t('secNote')}</div><div style="font-size:12px;color:#555;line-height:1.6">${r.notatka_statusu||'—'}</div></div>
+    <div class="sp-section"><div class="sp-sec-title">${t('secNote')}</div><div style="font-size:12px;color:#555;line-height:1.6">${esc(r.notatka_statusu)||'—'}</div></div>
     <div class="sp-section"><div class="sp-sec-title">${t('secRec')}</div>${ivHTML}</div>`;
 
   document.getElementById('side-panel').dataset.id=id;
@@ -1822,12 +1911,12 @@ function renderTable(recs) {
   document.getElementById('tbody').innerHTML=sorted.map(r=>`
     <tr data-id="${r.id}" style="${vis.has(r.id)?'':'display:none'};cursor:pointer" onclick="openPanel('${r.id}')">
       <td class="td-id">${r.id}</td>
-      <td class="td-name" title="${r.nazwa_inicjatywy}">${r.nazwa_inicjatywy}</td>
+      <td class="td-name" title="${esc(r.nazwa_inicjatywy)}">${esc(r.nazwa_inicjatywy)}</td>
       <td class="td-dept">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${DEPT_COLORS[r.dzial]||'#bbb'};margin-right:5px;vertical-align:middle"></span>${r.dzial}
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${DEPT_COLORS[r.dzial]||'#bbb'};margin-right:5px;vertical-align:middle"></span>${esc(r.dzial)}
       </td>
-      <td style="color:#777;white-space:nowrap">${r.wlasciciel}</td>
-      <td><span class="sb ${sbCls[r.status]||''}">${sbLbl[r.status]||r.status}</span></td>
+      <td style="color:#777;white-space:nowrap">${esc(r.wlasciciel)}</td>
+      <td><span class="sb ${sbCls[r.status]||''}">${sbLbl[r.status]||esc(r.status)}</span></td>
       <td>
         <div style="display:flex;align-items:center;gap:7px">
           <div class="pbar"><div class="pfill" style="width:${r.postep}%;background:${pfCol[r.status]||'#22c55e'}"></div></div>
@@ -1857,7 +1946,7 @@ function renderBrief() {
 
   const filterPills=[];
   if(S.deptFilter.size>0) S.deptFilter.forEach(dz=>{
-    filterPills.push(`<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f0f0ec;color:#555">${shortDept(dz)}</span>`);
+    filterPills.push(`<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f0f0ec;color:#555">${esc(shortDept(dz))}</span>`);
   });
   ['on_track','at_risk','blocked'].forEach(st=>{
     if(!S.statusFilter.has(st)) filterPills.push(`<span style="font-size:10px;padding:2px 8px;border-radius:20px;background:#fee2e2;color:#991b1b">${t('filterNoStatus', st.replace('_',' '))}</span>`);
@@ -1883,11 +1972,11 @@ function renderBrief() {
 
     const blokadyFiltered=blokady_przychodzace.filter(b2=>S.statusFilter.has(byid[b2.inicjatywa]?.status));
     let blokadyTxt=t('bNoIncoming');
-    if(blokadyFiltered.length>0) blokadyTxt=blokadyFiltered.map(b2=>t('bWaitsFor', b2.inicjatywa, b2.od, b2.dzial_upstream+(byid[b2.od]?' · '+byid[b2.od].staleness+'d':''))).join('; ')+'.';
+    if(blokadyFiltered.length>0) blokadyTxt=blokadyFiltered.map(b2=>t('bWaitsFor', b2.inicjatywa, b2.od, esc(b2.dzial_upstream)+(byid[b2.od]?' · '+byid[b2.od].staleness+'d':''))).join('; ')+'.';
 
     const blokujeFiltered=blokuje_innych.filter(b2=>S.statusFilter.has(byid[b2.inicjatywa]?.status));
     let blokujeTxt=t('bNoCross');
-    if(blokujeFiltered.length>0) blokujeTxt=blokujeFiltered.map(b2=>t('bBlocks', b2.inicjatywa, b2.blokuje, b2.dzial_downstream)).join('; ')+'.';
+    if(blokujeFiltered.length>0) blokujeTxt=blokujeFiltered.map(b2=>t('bBlocks', b2.inicjatywa, b2.blokuje, esc(b2.dzial_downstream))).join('; ')+'.';
 
     // Fix: an empty filter result used to render a bare "." — fall back to the
     // "all fresh" line unless at least one stale initiative survives the filter.
@@ -1901,12 +1990,12 @@ function renderBrief() {
       ?interwDz.map(i=>{
         const rolaLabel=badgeLabel(i.rola)||badgeLabel(i.typ)||'';
         const rolaClass=`badge-${i.rola||i.typ}`;
-        return `<div class="b-action"><div class="b-action-l" style="display:flex;align-items:center;gap:6px">${i.id} <span class="iv-badge ${rolaClass}" style="font-size:9px;padding:1px 6px">${rolaLabel}</span></div><div class="b-action-t">${tf(i,'rekomendacja')}</div></div>`;
+        return `<div class="b-action"><div class="b-action-l" style="display:flex;align-items:center;gap:6px">${i.id} <span class="iv-badge ${rolaClass}" style="font-size:9px;padding:1px 6px">${rolaLabel}</span></div><div class="b-action-t">${esc(tf(i,'rekomendacja'))}</div></div>`;
       }).join('')
       :`<div style="font-size:13px;color:#bbb">${t('bNoActions')}</div>`;
 
     html+=`<div class="b-dzial">
-      <div class="b-dname"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dcolor}"></span>${dzial}</div>
+      <div class="b-dname"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${dcolor}"></span>${esc(dzial)}</div>
       <div class="b-pills">
         ${on>0?`<span class="b-pill" style="background:#f0fdf4;color:#166534">${on} on track</span>`:''}
         ${at>0?`<span class="b-pill" style="background:#fffbeb;color:#92400e">${at} at risk</span>`:''}
@@ -2054,7 +2143,7 @@ function renderTimeline() {
       body += `<div class="tl-grp">
         <div class="tl-name">
           <div class="tl-grp-dot" style="background:${DEPT_COLORS[dzial] || '#bbb'}"></div>
-          <span class="tl-nm" style="font-weight:600;color:${DEPT_COLORS[dzial] || '#555'}">${dzial}</span>
+          <span class="tl-nm" style="font-weight:600;color:${DEPT_COLORS[dzial] || '#555'}">${esc(dzial)}</span>
           <span class="tl-grp-counts">${counts}</span>
         </div>
         <div class="tl-track">${gridHTML}</div>
@@ -2120,7 +2209,7 @@ function timelineRowHTML(r, range, gridHTML, iv) {
   return `<div class="tl-row" data-id="${r.id}">
     <div class="tl-name">
       <span class="tl-id">${r.id}</span>
-      <span class="tl-nm" title="${r.nazwa_inicjatywy}">${r.nazwa_inicjatywy}</span>
+      <span class="tl-nm" title="${esc(r.nazwa_inicjatywy)}">${esc(r.nazwa_inicjatywy)}</span>
       <span class="tl-meta">${stale}${badge}</span>
     </div>
     <div class="tl-track">${gridHTML}${bars}</div>
@@ -2142,9 +2231,9 @@ function renderDQ(d) {
         t(item.severity==='confirmed'?'dqTagConfirmed':item.severity==='likely'?'dqTagLikely':'dqTagInferred')
       }</span>
       <div>
-        <strong>${item.title}</strong><br>
-        <span style="color:#888">${item.desc}</span>
-        ${item.ai?`<div class="dq-ai-flag"><div class="dq-ai-label">${t('dqAiLabel')}</div>${item.ai}</div>`:''}
+        <strong>${esc(item.title)}</strong><br>
+        <span style="color:#888">${esc(item.desc)}</span>
+        ${item.ai?`<div class="dq-ai-flag"><div class="dq-ai-label">${t('dqAiLabel')}</div>${esc(item.ai)}</div>`:''}
       </div>
     </div>`;
   }
@@ -2175,7 +2264,7 @@ function renderDQ(d) {
     <div class="dq-sec-title" style="margin-bottom:6px">${t('dqAssumptions')}</div>
     <div style="font-size:12px;color:#666;line-height:1.8">
       <div>• ${t('dqA1')}</div>
-      <div>• ${t('dqA2', d.asof)}</div>
+      <div>• ${t('dqA2', esc(d.asof), d.asofSource)}</div>
       <div>• ${t('dqA3')}</div>
       <div>• ${t('dqA4')}</div>
     </div>
@@ -2199,13 +2288,13 @@ const DQ_TEXT = {
     noHistoryT:'Brak historii statusów',
     noHistoryD:'Dostępny jest tylko aktualny status i data ostatniej aktualizacji. Niemożliwe jest wyliczenie: „ile dni zablokowane”, trendu, prędkości historycznej. Staleness = dni od ostatniej aktualizacji, nie dni w bieżącym statusie.',
     ownerT:'INIT-15: brak właściciela technicznego (raport z notatki)',
-    ownerDual:'Dodatkowo: właściciel biznesowy i sponsor wskazują tę samą osobę (Dorota Michalska) — możliwa niejasność governance; wymaga weryfikacji.',
+    ownerDual: n => `Dodatkowo: właściciel biznesowy i sponsor wskazują tę samą osobę (${n}) — możliwa niejasność governance; wymaga weryfikacji.`,
     ownerD: extra => `Notatka statusu wprost informuje o braku właściciela technicznego od ~3 tygodni. ${extra} Pole wlasciciel zawiera właściciela biznesowego; model danych nie przewiduje osobnego pola technical_owner.`,
     ownerAI:'Sygnał z notatki: „Brak właściciela technicznego od 3 tygodni” — klasyfikacja DIRECT ACTION: assign technical owner. Nie modyfikuje struktury danych automatycznie.',
     deadlinesT: n => `Terminy/kamienie milowe tylko w notatkach (${n} ${plPL(n,'inicjatywa','inicjatywy','inicjatyw')})`,
     deadlinesD: ids => `Inicjatywy z datami w notatkach: ${ids}. To sygnały kontekstowe — nie są uzgadniane z polami planned_end / forecast_end, więc notatka może być sprzeczna z harmonogramem bez wykrycia przez aplikację.`,
     init16T:'INIT-16: potencjalna brakująca zależność/akceptacja',
-    init16D:'Pole zalezy_od wskazuje tylko na INIT-03. Notatka statusu zawiera: „do zamknięcia potrzebujemy jeszcze akceptacji Pricing”. Akceptacja działu Pricing nie jest reprezentowana strukturalnie.',
+    init16D: deps => `Pole zalezy_od wskazuje tylko na ${deps}. Notatka statusu zawiera: „do zamknięcia potrzebujemy jeszcze akceptacji Pricing”. Akceptacja działu Pricing nie jest reprezentowana strukturalnie.`,
     init16AI:'Potencjalna brakująca zależność wykryta z notatki statusu. Wymaga weryfikacji przez właściciela inicjatywy przed dodaniem krawędzi do grafu.',
     timingT:'INIT-17 → INIT-18: dwuznaczność zależności czasowej',
     timingD:'INIT-18 potrzebuje „doświadczeń pilotażu włoskiego” z INIT-17. Pilotaż startuje 1 września. Niejasne: czy INIT-18 potrzebuje startu pilotażu czy jego wyników? Możliwe ukryte opóźnienie o kilka tygodni.',
@@ -2225,13 +2314,13 @@ const DQ_TEXT = {
     noHistoryT:'No status history',
     noHistoryD:'Only the current status and the last-update date are available. It is impossible to derive “how many days blocked”, a trend, or historical velocity. Staleness = days since the last update, not days in the current status.',
     ownerT:'INIT-15: no technical owner (reported in the status note)',
-    ownerDual:'On top of that, the business owner and the sponsor are the same person (Dorota Michalska) — possible governance ambiguity; needs verification.',
+    ownerDual: n => `On top of that, the business owner and the sponsor are the same person (${n}) — possible governance ambiguity; needs verification.`,
     ownerD: extra => `The status note states outright that there has been no technical owner for ~3 weeks. ${extra} The wlasciciel field holds the business owner; the data model has no separate technical_owner field.`,
     ownerAI:'Signal from the note: “No technical owner for 3 weeks” — classified as DIRECT ACTION: assign a technical owner. It does not modify the data structure automatically.',
     deadlinesT: n => `Deadlines/milestones live only in the notes (${n} initiative${sfx(n)})`,
     deadlinesD: ids => `Initiatives with dates in their notes: ${ids}. These are contextual signals only — they are never reconciled against the structured planned_end / forecast_end fields, so a note can contradict the schedule without the app noticing.`,
     init16T:'INIT-16: potential missing dependency/approval',
-    init16D:'The zalezy_od field points only to INIT-03. The status note says the team still needs Pricing sign-off to close. A Pricing approval is not represented structurally.',
+    init16D: deps => `The zalezy_od field points only to ${deps}. The status note says the team still needs Pricing sign-off to close. A Pricing approval is not represented structurally.`,
     init16AI:'A potential missing dependency detected in the status note. It needs verification by the initiative owner before an edge is added to the graph.',
     timingT:'INIT-17 → INIT-18: timing dependency ambiguity',
     timingD:'INIT-18 needs the “lessons from the Italian pilot” from INIT-17. The pilot starts on 1 September. Unclear: does INIT-18 need the pilot to start, or its results? A hidden delay of several weeks is possible.',
@@ -2291,7 +2380,7 @@ function buildDQIssues(d) {
       issues.push({
         severity: 'confirmed',
         title: L.ownerT,
-        desc: L.ownerD(ownerEqualsSponsor ? L.ownerDual : ''),
+        desc: L.ownerD(ownerEqualsSponsor ? L.ownerDual(init15.wlasciciel) : ''),
         ai: L.ownerAI
       });
     }
@@ -2311,10 +2400,16 @@ function buildDQIssues(d) {
     });
   }
 
-  // 5. INFERRED: INIT-16 potential missing dependency / approval
+  // 5. INFERRED: INIT-16 potential missing dependency / approval — only if the note
+  //    actually asks for a Pricing sign-off that no structured dependency represents
   const init16 = recs.find(r=>r.id==='INIT-16');
   if(init16) {
-    issues.push({ severity:'inferred', title:L.init16T, desc:L.init16D, ai:L.init16AI });
+    const note16 = (init16.notatka_statusu||'').toLowerCase();
+    const asksPricing = note16.includes('akceptacj') && note16.includes('pricing');
+    const hasPricingDep = (init16.dep||[]).some(id => { const u = recs.find(x=>x.id===id); return u && /pricing/i.test(u.dzial); });
+    if(asksPricing && !hasPricingDep) {
+      issues.push({ severity:'inferred', title:L.init16T, desc:L.init16D((init16.dep||[]).join(', ')||'—'), ai:L.init16AI });
+    }
   }
 
   // 6. INFERRED: INIT-17 -> INIT-18 timing ambiguity
@@ -2333,55 +2428,158 @@ function buildDQIssues(d) {
 
 
 // ── CSV UPLOAD ──
+// Import is all-or-nothing: a file that fails parsing or validation is rejected with a
+// full report and the current portfolio stays loaded — never a partial analysis.
 function handleCSV(e) {
   const file=e.target.files[0]; if(!file) return;
+  e.target.value=''; // allow re-selecting the same file after fixing it
   const reader=new FileReader();
   reader.onload=ev=>{
     try {
-      const text=ev.target.result;
-      const parsed=parseCSV(text);
-      if(parsed.length<2){ showToast(t('csvTooFew')); return; }
-      const data=buildDataFromRecs(parsed);
+      const parsed=parseCSVStrict(ev.target.result);
+      const v=validatePortfolio(parsed);
+      if(v.errors.length){ showCsvErrors(file.name, v.errors); return; }
+      const data=buildDataFromRecs(parsed.records, {asof:v.asof, asofSource:v.asofSource});
       document.getElementById('csv-loaded').style.display='block';
       boot(data);
-      showToast(t('csvLoadedToast', file.name, parsed.length));
+      showToast(t('csvLoadedToast', file.name, parsed.records.length));
     } catch(err){ showToast(t('csvParseErr', err.message)); }
   };
   reader.readAsText(file,'utf-8');
 }
 
-function parseCSV(text) {
-  const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim().split('\n');
-  const parseRow=ln=>{
-    const result=[]; let cur='', inQ=false;
-    for(let i=0;i<ln.length;i++){
-      const c=ln[i];
-      if(c==='"'){ if(inQ&&ln[i+1]==='"'){cur+='"';i++;} else inQ=!inQ; }
-      else if(c===','&&!inQ){ result.push(cur);cur=''; }
-      else cur+=c;
-    }
-    result.push(cur); return result;
-  };
-  const hdr=parseRow(lines[0]);
-  const recs=[];
-  for(let i=1;i<lines.length;i++){
-    if(!lines[i].trim()) continue;
-    let row=parseRow(lines[i]);
-    if(row.length===1){ const inner=parseRow(row[0]); if(inner.length===hdr.length) row=inner; }
-    if(row.length===hdr.length) recs.push(Object.fromEntries(hdr.map((h,j)=>[h,row[j]||''])));
+// RFC 4180 parser: quoted fields may contain commas, "" escapes and line breaks.
+// Returns every record with its source line, plus structural errors — nothing is dropped silently.
+function parseCSVStrict(text) {
+  const src=String(text||'').replace(/^﻿/,'').replace(/\r\n?/g,'\n');
+  const rows=[], errors=[];
+  let field='', row=[], inQ=false, line=1, rowLine=1, quoteLine=0;
+  const endRow=()=>{ row.push(field); rows.push({line:rowLine, fields:row}); row=[]; field=''; };
+  for(let i=0;i<src.length;i++){
+    const c=src[i];
+    if(inQ){
+      if(c==='"'){ if(src[i+1]==='"'){ field+='"'; i++; } else inQ=false; }
+      else { if(c==='\n') line++; field+=c; }
+    } else if(c==='"'){ inQ=true; quoteLine=line; }
+    else if(c===','){ row.push(field); field=''; }
+    else if(c==='\n'){ endRow(); line++; rowLine=line; }
+    else field+=c;
   }
-  return recs;
+  if(inQ) errors.push({line:quoteLine, key:'valUnclosedQuote'});
+  if(field!==''||row.length) endRow();
+  // blank lines are not records
+  const nonEmpty=rows.filter(r=>!(r.fields.length===1&&!r.fields[0].trim()));
+  if(!nonEmpty.length) return {header:[], records:[], errors:[{key:'valEmpty'}]};
+  const header=nonEmpty[0].fields.map(h=>h.trim());
+  const records=[];
+  nonEmpty.slice(1).forEach(r=>{
+    let f=r.fields;
+    // compatibility: some exports wrap a whole row in one pair of quotes
+    if(f.length===1&&header.length>1){ const inner=parseCSVStrict(header.join(',')+'\n'+f[0]); if(inner.records.length===1&&!inner.errors.length) f=header.map(h=>inner.records[0][h]); }
+    if(f.length!==header.length){ errors.push({line:r.line, key:'valColCount', args:[f.length, header.length]}); return; }
+    const rec=Object.fromEntries(header.map((h,j)=>[h,(f[j]||'').trim()]));
+    Object.defineProperty(rec,'_line',{value:r.line, enumerable:false});
+    records.push(rec);
+  });
+  return {header, records, errors};
 }
 
-function buildDataFromRecs(recs) {
+// Startup path: the embedded demo is trusted, so return records only.
+function parseCSV(text) { return parseCSVStrict(text).records; }
+
+const REQUIRED_COLS=['id','nazwa_inicjatywy','dzial','grupa_tematyczna','wlasciciel','sponsor','status','postep_procent','data_ostatniej_aktualizacji','zalezy_od','notatka_statusu'];
+const ID_RE=/^[A-Za-z0-9][A-Za-z0-9_.\-]*$/;
+const STATUSES=['on_track','at_risk','blocked'];
+
+// Deterministic structural validation of an imported portfolio. Also resolves the
+// snapshot date: explicit snapshot_date column, otherwise the day after the newest update.
+function validatePortfolio(parsed) {
+  const errors=[...parsed.errors];
+  const missingCols=REQUIRED_COLS.filter(c=>!parsed.header.includes(c));
+  if(missingCols.length) errors.push({key:'valMissingCols', args:[missingCols.join(', ')]});
+  const recs=parsed.records;
+  if(missingCols.length) return {errors};
+  if(recs.length<2) errors.push({key:'valTooFew'});
+
+  const ids=new Set(), seen={};
+  recs.forEach(r=>{
+    const L=r._line;
+    if(!ID_RE.test(r.id)) errors.push({line:L, key:'valBadId', args:[r.id]});
+    else if(seen[r.id]) errors.push({line:L, key:'valDupId', args:[r.id, seen[r.id]]});
+    else { seen[r.id]=L; ids.add(r.id); }
+    if(!r.nazwa_inicjatywy) errors.push({line:L, key:'valEmptyField', args:['nazwa_inicjatywy', r.id]});
+    if(!r.dzial) errors.push({line:L, key:'valEmptyField', args:['dzial', r.id]});
+    if(!STATUSES.includes(r.status)) errors.push({line:L, key:'valBadStatus', args:[r.id, r.status]});
+    if(!/^\d{1,3}$/.test(r.postep_procent)||+r.postep_procent>100) errors.push({line:L, key:'valBadProgress', args:[r.id, r.postep_procent]});
+    if(!parseSchedDate(r.data_ostatniej_aktualizacji)) errors.push({line:L, key:'valBadDate', args:[r.id, 'data_ostatniej_aktualizacji', r.data_ostatniej_aktualizacji]});
+  });
+
+  // dependency references
+  const deps={};
+  recs.forEach(r=>{
+    deps[r.id]=(r.zalezy_od||'').split(',').map(x=>x.trim()).filter(Boolean);
+    deps[r.id].forEach(d=>{
+      if(d===r.id) errors.push({line:r._line, key:'valSelfDep', args:[r.id]});
+      else if(!ids.has(d)) errors.push({line:r._line, key:'valUnknownDep', args:[r.id, d]});
+    });
+  });
+
+  // cycles (self-dependencies are reported above)
+  const state={}, stack=[], cycles=new Set();
+  const visit=id=>{
+    state[id]=1; stack.push(id);
+    (deps[id]||[]).forEach(d=>{
+      if(d===id||!ids.has(d)) return;
+      if(state[d]===1){ const cyc=stack.slice(stack.indexOf(d)).concat(d); cycles.add(cyc.join(' → ')); }
+      else if(!state[d]) visit(d);
+    });
+    stack.pop(); state[id]=2;
+  };
+  [...ids].forEach(id=>{ if(!state[id]) visit(id); });
+  cycles.forEach(c=>errors.push({key:'valCycle', args:[c]}));
+
+  // snapshot date
+  let asof=null, asofSource='derived';
+  if(parsed.header.includes('snapshot_date')){
+    const vals=[...new Set(recs.map(r=>r.snapshot_date).filter(Boolean))];
+    if(vals.length!==1||!parseSchedDate(vals[0])) errors.push({key:'valBadSnapshot', args:[vals.join(', ')||'—']});
+    else { asof=vals[0]; asofSource='column'; }
+  }
+  const upd=recs.map(r=>parseSchedDate(r.data_ostatniej_aktualizacji)).filter(Boolean);
+  if(!asof&&upd.length){
+    const next=new Date(Math.max(...upd.map(d=>d.getTime()))+DAY_MS);
+    asof=next.toISOString().slice(0,10);
+  }
+  const asofD=parseSchedDate(asof);
+  if(asofD) recs.forEach(r=>{
+    const u=parseSchedDate(r.data_ostatniej_aktualizacji);
+    if(u&&u>asofD) errors.push({line:r._line, key:'valFutureUpdate', args:[r.id, r.data_ostatniej_aktualizacji, asof]});
+  });
+  return {errors, asof, asofSource};
+}
+
+function showCsvErrors(fileName, errors) {
+  const MAX=40;
+  const items=errors.slice(0,MAX).map(er=>
+    `<li>${er.line?`<span class="csv-err-ln">${esc(t('valLine', er.line))}</span>`:''}${esc(t(er.key, ...(er.args||[])))}</li>`).join('');
+  const more=errors.length>MAX?`<li>${esc(t('valMore', errors.length-MAX))}</li>`:'';
+  document.getElementById('csv-err-title').textContent=t('valTitle', fileName, errors.length);
+  document.getElementById('csv-err-list').innerHTML=items+more;
+  document.getElementById('csv-err').style.display='flex';
+}
+function closeCsvErrors() { document.getElementById('csv-err').style.display='none'; }
+
+function buildDataFromRecs(recs, opts={}) {
   // v7.2 pipeline — ROOT_CAUSE / DIRECT_ACTION / IMPACT / MONITOR
-  // Snapshot date comes from the single global ASOF constant (reproducible, file-independent).
-  const asofDate=parseSchedDate(ASOF);
+  // Snapshot: the frozen ASOF constant for the embedded demo; an imported file supplies
+  // its own (see validatePortfolio) so staleness is never measured against the demo date.
+  const asof=opts.asof||ASOF, asofSource=opts.asofSource||'frozen';
+  const asofDate=parseSchedDate(asof);
   recs.forEach(r=>{
     r.dep=(r.zalezy_od||'').split(',').map(x=>x.trim()).filter(Boolean);
     r.postep=parseInt(r.postep_procent)||0;
-    const upd=new Date(r.data_ostatniej_aktualizacji);
-    r.staleness=Math.round((asofDate-upd)/(1000*60*60*24));
+    const upd=parseSchedDate(r.data_ostatniej_aktualizacji);
+    r.staleness=upd?Math.round((asofDate-upd)/DAY_MS):0;
   });
   const byid={};
   recs.forEach(r=>byid[r.id]=r);
@@ -2631,7 +2829,7 @@ function buildDataFromRecs(recs) {
   });
   alerty.sort((a,b)=>b.dni-a.dni);
 
-  return {asof:ASOF,inicjatywy:recs,interwencje,brief,alerty,dzialy};
+  return {asof,asofSource,inicjatywy:recs,interwencje,brief,alerty,dzialy};
 }
 
 // ── EXPORT ──
